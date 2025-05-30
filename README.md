@@ -16,7 +16,7 @@ Our contributions in the article are as follows:
 *In four laboratory cases, we demonstrate that the use of ULM can **improve** model performance compared to standard **MLP**, and the models can be used in **laboratory diagnostics**.*
 
 <div align="center">
-  <img src="images/ulm.png" width="300">
+  <img src="images/ulm.png" width="400">
 </div>
 
 ### Model Architecture
@@ -34,22 +34,29 @@ Uses **Self-Attention** where all parameters derive from the model input:
 
 E(X) = \text{Attention}(Q{=}X,\, K{=}X,\, V{=}X)
 
+<div align="center">
+  <img src="images/encoder.png" width="400">
+</div>
+
 #### Encoder `D(P, X)`:
 Uses predicting features as queries:
 
 D(P,X) = \text{Attention}(Q{=}P,\, K{=}I,\, V{=}I)
+
+<div align="center">
+  <img src="images/decoder.png" width="400">
+</div>
 
 #### GPT-Embeddings Processing:
 We preserve GPT-embeddings' intrinsic knowledge by avoiding destructive transformations:
 
 y_i = \text{GPT}_i \cdot v_i + B
 
-Where:
+<div align="center">
+  <img src="images/gpt.png" width="400">
+</div>
 
-GPT_i = GPT-embedding of feature *i*.
-- v_i = feature value.
-- B = trainable bias term.
-- · = scalar multiplication.
+Where: GPT_i = GPT-embedding of feature *i*, v_i = feature value, B = trainable bias term, * = scalar multiplication.
 
 - ❌ Prohibited: Matrix multiplications (rotations/squeezing).
 - ✅ Allowed: Only scalar operations.
