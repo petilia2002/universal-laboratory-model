@@ -21,7 +21,7 @@ Our contributions in the article are as follows:
 
 ### Model Architecture
 
-Our approach uses the **Encoder-Decoder pattern** (see Fig. 1). The attention block has three parameters: queries `Q`, keys `K`, and values `V`.
+Our approach uses the **Encoder-Decoder pattern**. The attention block has three parameters: queries `Q`, keys `K`, and values `V`.
 
 Given:
 - `X` = input data
@@ -32,28 +32,22 @@ The components work as follows:
 #### Encoder `E(X)`:
 Uses **Self-Attention** where all parameters derive from the model input:
 
-E(X) = \text{Attention}(Q{=}X,\, K{=}X,\, V{=}X)
-
 <div align="center">
-  <img src="images/encoder.png" width="400">
+  <img src="images/encoder.png" width="600">
 </div>
 
 #### Encoder `D(P, X)`:
 Uses predicting features as queries:
 
-D(P,X) = \text{Attention}(Q{=}P,\, K{=}I,\, V{=}I)
-
 <div align="center">
-  <img src="images/decoder.png" width="400">
+  <img src="images/decoder.png" width="600">
 </div>
 
 #### GPT-Embeddings Processing:
 We preserve GPT-embeddings' intrinsic knowledge by avoiding destructive transformations:
 
-y_i = \text{GPT}_i \cdot v_i + B
-
 <div align="center">
-  <img src="images/gpt.png" width="400">
+  <img src="images/gpt.png" width="200">
 </div>
 
 Where: GPT_i = GPT-embedding of feature *i*, v_i = feature value, B = trainable bias term, * = scalar multiplication.
