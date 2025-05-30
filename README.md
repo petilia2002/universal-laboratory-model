@@ -19,6 +19,10 @@ Our contributions in the article are as follows:
   <img src="ulm.png" width="400">
 </div>
 
+<div align="center" style="margin: 50px 0; padding: 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+  <img src="ulm.png" width="600"/>
+</div>
+
 ### Model Architecture
 
 Our approach uses the **Encoder-Decoder pattern** (see Fig. 1). The attention block has three parameters: queries `Q`, keys `K`, and values `V`.
