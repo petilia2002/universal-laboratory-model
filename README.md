@@ -15,7 +15,9 @@ Our contributions in the article are as follows:
 
 *In four laboratory cases, we demonstrate that the use of ULM can **improve** model performance compared to standard **MLP**, and the models can be used in **laboratory diagnostics**.*
 
-<img src="ulm.png" width=80%>
+<div align="center">
+  <img src="images/ulm.png" width="400">
+</div>
 
 ### Model Architecture
 
@@ -76,8 +78,8 @@ The code is organized into several key scripts, each representing a distinct sta
 - **`e3.py`**  
   *ULM (Unified Lab Model) Implementation*  
   Proposes a novel architecture:  
-  1. **Encoder**: Processes GPT embeddings of input lab tests.  
-  2. **Decoder**: Takes the encoder's output and uses target test embeddings (as queries) to generate predictions.
+  - **Encoder**: Processes GPT embeddings of input lab tests.  
+  - **Decoder**: Takes the encoder's output and uses target test embeddings (as queries) to generate predictions.
 
 ### Key Observations:
 - Practical simplifications (e.g., histograms in `ad.py`) are explicitly acknowledged.  
