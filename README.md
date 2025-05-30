@@ -59,29 +59,29 @@ We preserve GPT-embeddings' intrinsic knowledge by avoiding destructive transfor
 The code is organized into several key scripts, each representing a distinct stage or approach in the implementation of the scientific article. Below is a detailed breakdown:
 
 ### Core Scripts:
-- **`ad.py`**  
+- **`analyte_intervals.py`**  
   *Interval Definition for Analytes*  
   Implements a practical approach to determining analyte intervals using histograms (instead of theoretical probability density integration).  
   *Key nuance*: While papers often describe probability density integration, real-world applications typically rely on histograms.  
 
-- **`one.py`**  
+- **`single_target.py`**  
   *Single-Target Prediction*  
   Trains models to predict individual targets (ferritin, glucose, cholesterol, uric acid) using all available data (missing values filled with zeros).  
   - Data restricted to dates before `2025/01/01`.  
   - Predictions are made only for points where all features fall within the model's defined domain.  
 
-- **`multi.py`**  
+- **`multi_target.py`**  
   *Multi-Target Joint Training*  
   Tests the effect of training a single model to predict all four targets simultaneously.  
   - *Conclusion*: No significant improvement observed compared to single-target models.  
 
-- **`e3.py`**  
+- **`ulm_core.py`**  
   *ULM (Unified Lab Model) Implementation*  
   Proposes a novel architecture:  
   - **Encoder**: Processes GPT embeddings of input lab tests.  
   - **Decoder**: Takes the encoder's output and uses target test embeddings (as queries) to generate predictions.
 
 ### Key Observations:
-- Practical simplifications (e.g., histograms in `ad.py`) are explicitly acknowledged.  
-- The ULM approach (`e3.py`) is the most experimental and innovative part of the codebase.  
-- Multi-task learning (`multi.py`) showed no advantage, which is itself a valuable finding.
+- Practical simplifications (e.g., histograms in `analyte_intervals.py`) are explicitly acknowledged.  
+- The ULM approach (`ulm_core.py`) is the most experimental and innovative part of the codebase.  
+- Multi-task learning (`multi_target.py`) showed no advantage, which is itself a valuable finding.
