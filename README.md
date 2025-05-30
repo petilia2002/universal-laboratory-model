@@ -33,26 +33,25 @@ The components work as follows:
 Uses **Self-Attention** where all parameters derive from the model input:
 
 <div align="center">
-  <img src="images/encoder.png" width="600">
+  <img src="images/encoder.png" width="500">
 </div>
 
 #### Encoder `D(P, X)`:
 Uses predicting features as queries:
 
 <div align="center">
-  <img src="images/decoder.png" width="600">
+  <img src="images/decoder.png" width="500">
 </div>
 
 #### GPT-Embeddings Processing:
 We preserve GPT-embeddings' intrinsic knowledge by avoiding destructive transformations:
 
 <div align="center">
-  <img src="images/gpt.png" width="200">
+  <img src="images/gpt.png" width="300">
 </div>
 
-Where: GPT_i = GPT-embedding of feature *i*, v_i = feature value, B = trainable bias term, * = scalar multiplication.
-
 - ❌ Prohibited: Matrix multiplications (rotations/squeezing).
+
 - ✅ Allowed: Only scalar operations.
 
 ## Code Overview
