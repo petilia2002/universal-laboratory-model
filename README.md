@@ -1,9 +1,9 @@
-# Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests (ICECCME 2025) 💥💥💥
+# 💥 Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests (ICECCME 2025) 💥
 
 This is the official implementation of the paper
 "Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests".
 
-Our contributions in the article are as follows 📌:
+📌 Our contributions in the article are as follows:
 
 - We developed a new neural network architecture – the **Universal Laboratory Model (ULM)** – that can effectively model multidimensional laboratory data with missing values using the **attention mechanism** of the **Set Transformer** and internal encodings of key parameters by the **Large Language Model**.
 - Applying this architecture to laboratory data, we built accurate models to predict system pathology that can result in **low ferritin**, **high uric acid**, **cholesterol**, and **glucose** levels based on **CBC results** and (if any) other blood tests. The model can be easily expanded for other tests (features).
