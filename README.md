@@ -15,12 +15,8 @@ Our contributions in the article are as follows:
 
 *In four laboratory cases, we demonstrate that the use of ULM can **improve** model performance compared to standard **MLP**, and the models can be used in **laboratory diagnostics**.*
 
-<div align="center" style="margin: 1000">
+<div align="center">
   <img src="ulm.png" width="400">
-</div>
-
-<div align="center" style="margin: 50px 0; padding: 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-  <img src="ulm.png" width="600"/>
 </div>
 
 ### Model Architecture
