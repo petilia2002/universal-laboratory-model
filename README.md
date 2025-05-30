@@ -36,7 +36,7 @@ Uses **Self-Attention** where all parameters derive from the model input:
   <img src="images/encoder.png" width="500">
 </div>
 
-#### Encoder `D(P, X)`:
+#### Decoder `D(P, X)`:
 Uses predicting features as queries:
 
 <div align="center">
