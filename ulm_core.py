@@ -33,6 +33,9 @@ load_file = fs_config["load_file_ulm"]
 save_file = fs_config["save_file_ulm"]
 stats_folder = fs_config["stats_folder_ulm"]
 
+analyte_limits_file = fs_config["analyte_limits_file"]
+embeddings_file = fs_config["embeddings_file"]
+
 con = fdb.connect(dsn=dsn, user=user, password=password)
 
 print(tensorflow.config.list_physical_devices("GPU"))
@@ -218,12 +221,12 @@ for (
 for u in Limits:
     print(u, Limits[u])
 
-with open("e3.pickle", "wb") as file:
+with open(analyte_limits_file, "wb") as file:
     pickle.dump(Limits, file)
 
 print("Total: ", len(X))
 
-gpt = np.load("../embeddings.npy")
+gpt = np.load(embeddings_file)
 dims = gpt.shape
 emb_size = dims[1]
 
