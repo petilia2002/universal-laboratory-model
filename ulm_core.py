@@ -8,37 +8,30 @@ import datetime
 import os
 
 import keras
+from keras import Model
+from keras.api.layers import Input, Dense, Embedding
+from keras.api.layers import Flatten
 
-from keras import Model, regularizers
-from keras.layers import Input, Dense, Embedding
-from keras.layers import Dropout, Flatten, Lambda
-from keras.layers import Concatenate, Multiply, Add
-from keras.layers import GaussianNoise, LayerNormalization
-
-from keras.callbacks import EarlyStopping
-from keras.utils import set_random_seed
-
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from sklearn.metrics import (
-    mean_squared_error,
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error,
-)
+from keras.api.callbacks import EarlyStopping
 from sklearn.metrics import roc_curve, auc
 
 import tensorflow
 import tensorflow.python.keras.backend as K
 
 config_object = ConfigParser()
-config_object.read("./config.ini")
+config_object.read("./config_file.ini")
 
 user_info = config_object["USERINFO"]
 server_config = config_object["SERVERCONFIG"]
+fs_config = config_object["FSCONFIG"]
 
 dsn = server_config["dsn"]
 user = user_info["user"]
 password = user_info["password"]
+
+load_file = fs_config["load_file_ulm"]
+save_file = fs_config["save_file_ulm"]
+stats_folder = fs_config["stats_folder_ulm"]
 
 con = fdb.connect(dsn=dsn, user=user, password=password)
 
@@ -506,7 +499,7 @@ class MessagerCallback(tensorflow.keras.callbacks.Callback):
         return
 
 
-model.load_weights("e3.weights.h5")
+model.load_weights(load_file)
 
 model.fit(
     x=[x_train, w_train, m_train, m_pred_train],
@@ -524,7 +517,7 @@ model.fit(
     ],
 )
 
-model.save_weights("e3.weights.h5", True)
+model.save_weights(save_file, True)
 
 y_pred = model.predict([x_train, w_train, m_train, m_pred_train])
 y2_pred = model.predict([x_test, w_test, m_test, m_pred_test])
@@ -562,7 +555,7 @@ def calcRocs(prop):
     elif prop == 3:
         label = "Uric"
 
-    fp = open("/home/ilya/oak/stats/" + label + ".txt", "w")
+    fp = open(stats_folder + label + ".txt", "w")
     for i in range(len(fpr)):
         print(fpr[i], tpr[i], file=fp)
     fp.close()

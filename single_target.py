@@ -3,42 +3,33 @@ import fdb
 import numpy as np
 import math
 import sys
-import pickle
 import datetime
 import os
 
 import keras
+from keras import Model
+from keras.api.layers import Input, Dense
 
-from keras import Model, regularizers
-from keras.layers import Input, Dense, Embedding
-from keras.layers import Dropout, Flatten, Lambda
-from keras.layers import Concatenate, Multiply, Add
-from keras.layers import GaussianNoise, LayerNormalization
-
-from keras.callbacks import EarlyStopping
-from keras.utils import set_random_seed
-
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from sklearn.metrics import (
-    mean_squared_error,
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error,
-)
+from keras.api.callbacks import EarlyStopping
 from sklearn.metrics import roc_curve, auc
 
 import tensorflow
 import tensorflow.python.keras.backend as K
 
 config_object = ConfigParser()
-config_object.read("./config.ini")
+config_object.read("./config_file.ini")
 
 user_info = config_object["USERINFO"]
 server_config = config_object["SERVERCONFIG"]
+fs_config = config_object["FSCONFIG"]
 
 dsn = server_config["dsn"]
 user = user_info["user"]
 password = user_info["password"]
+
+load_file = fs_config["load_file_single_target"]
+save_file = fs_config["save_file_single_target"]
+stats_folder = fs_config["stats_folder_single_target"]
 
 con = fdb.connect(dsn=dsn, user=user, password=password)
 
@@ -371,7 +362,7 @@ class MessagerCallback(tensorflow.keras.callbacks.Callback):
         return
 
 
-# model.load_weights("base-multi.weights.h5");
+# model.load_weights(load_file);
 
 model.fit(
     x=x_train,
@@ -389,7 +380,7 @@ model.fit(
     ],
 )
 
-model.save_weights("one/ferritin-3.weights.h5", True)
+model.save_weights(save_file, True)
 
 y_pred = model.predict(x_train)
 y2_pred = model.predict(x_test)
@@ -427,7 +418,7 @@ def calcRocs():
     elif ANALYTE == 3:
         label = "Uric"
 
-    fp = open("/home/ilya/oak/stats/" + label + "-one.txt", "w")
+    fp = open(stats_folder + label + "-one.txt", "w")
     for i in range(len(fpr)):
         print(fpr[i], tpr[i], file=fp)
     fp.close()
