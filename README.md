@@ -1,4 +1,4 @@
-# 💥 Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests (ICECCME 2025) 💥
+# Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests (ICECCME 2025) 
 
 This is the official implementation of the paper
 "Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests".
