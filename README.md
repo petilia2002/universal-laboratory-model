@@ -64,7 +64,7 @@ The code is organized into several key scripts, each representing a distinct sta
   Main script to train a model based on settings in config.ini. Available model types are: single, multi, and ulm - defined in config.ini.
   Copy example config and fill in with your values. As we cannot provide the source data you have to implement a similar to createDatasets function (data.py).
 
-  ## Version
+## Version
 
 We used python3.11 and Tensorflow 2.18 to build and the our models.
 
