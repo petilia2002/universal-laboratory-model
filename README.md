@@ -66,6 +66,6 @@ The code is organized into several key scripts, each representing a distinct sta
 
 ## Version
 
-We used python3.11 and Tensorflow 2.18 to build and the our models.
+We used python3.11 and Tensorflow 2.18 to build and test our models.
 
 
