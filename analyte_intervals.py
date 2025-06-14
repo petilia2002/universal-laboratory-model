@@ -1,10 +1,5 @@
 from configparser import ConfigParser
 import fdb
-import numpy as np
-
-from scipy.stats import gaussian_kde
-from scipy import optimize
-
 
 def find_min_max(x):
 
@@ -75,7 +70,7 @@ def find_min_max(x):
 def applicabilityDomain():
 
     config_object = ConfigParser()
-    config_object.read("./config_file.ini")
+    config_object.read("./config.ini")
 
     user_info = config_object["USERINFO"]
     server_config = config_object["SERVERCONFIG"]
@@ -122,5 +117,4 @@ def applicabilityDomain():
 
     ml.commit()
 
-
-# applicabilityDomain();
+applicabilityDomain();
