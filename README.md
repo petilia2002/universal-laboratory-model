@@ -1,4 +1,4 @@
-# Leveraging LLM embeddings for tabular data: case of Universal Laboratory Model to predict abnormal clinical outcomes based on routine tests
+# Universal Laboratory Model: prognosis of abnormal clinical outcomes based on routine tests
 
 This is the implementation of our paper ["Universal Laboratory Model: prognosis of abnormal clinical outcomes based on routine tests"](https://arxiv.org/abs/2506.15330) accepted to present at [ICECCME'25](https://www.iceccme.com/venue) 
 
