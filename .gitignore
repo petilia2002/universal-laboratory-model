@@ -4,3 +4,4 @@ __pycache__
 *.weights.h5
 *.pickle
 stop
+stats/*.txt
