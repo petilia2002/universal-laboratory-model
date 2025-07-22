@@ -8,11 +8,12 @@ import numpy as np
 from layers import MASKED_VALUE
 
 # We use a FireBird database, the schema is provided.
-# As we cannot share the data, you might implement a similar function 
+# As we cannot share the data, you might implement a similar function
 # to get data from your data lake.
 
+
 def createDatasets(tests, config_object):
-    
+
     user_info = config_object["USERINFO"]
     server_config = config_object["SERVERCONFIG"]
 
@@ -27,8 +28,35 @@ def createDatasets(tests, config_object):
 
     # Our training parameters, values correspond to analytes.id
 
-    idx = [ 34, 35, 19, 20, 21, 23, 22, 24, 25, 26, 27, 28,
-            36, 37, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 29,]
+    idx = [
+        34,
+        35,
+        19,
+        20,
+        21,
+        23,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        36,
+        37,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        18,
+        29,
+    ]
 
     NN = len(idx)
 
@@ -40,17 +68,47 @@ def createDatasets(tests, config_object):
     for i in range(len(tests)):
         Limits[tests[i]] = [sys.float_info.max, -sys.float_info.max, 0]
 
-    X = [] # values 
-    W = [] # words, i.e. analytes.id 
-    Y = [] # outputs 0 or 1
+    X = []  # values
+    W = []  # words, i.e. analytes.id
+    Y = []  # outputs 0 or 1
 
-    # For reproducibility we use time split, all the models are being built for 
+    # For reproducibility we use time split, all the models are being built for
     # sample.id <= 1671132.
 
-    for gender, age, hgb, rbc, mcv, plt, wbc, neut, lymph, eo, baso, mono, \
-        mid, gra, b12, folic, ast, alt, bil_direct, bil_indirect, bil_total, \
-        crea, urea, pro, ldg, alb, crp, ferritin, glu, chol, uric  in \
-        con.cursor().execute("""select a.gender, a.age, a.hgb, a.rbc, a.mcv, a.plt, 
+    for (
+        gender,
+        age,
+        hgb,
+        rbc,
+        mcv,
+        plt,
+        wbc,
+        neut,
+        lymph,
+        eo,
+        baso,
+        mono,
+        mid,
+        gra,
+        b12,
+        folic,
+        ast,
+        alt,
+        bil_direct,
+        bil_indirect,
+        bil_total,
+        crea,
+        urea,
+        pro,
+        ldg,
+        alb,
+        crp,
+        ferritin,
+        glu,
+        chol,
+        uric,
+    ) in con.cursor().execute(
+        """select a.gender, a.age, a.hgb, a.rbc, a.mcv, a.plt, 
                                        a.wbc, a.neut, a.lymph, a.eo, a.baso, a.mono,
                                        a.mid, a.gra, a.b12, a.folic, a.ast, a.alt, 
                                        a.bil_direct, a.bil_indirect, a.bil_total, 
@@ -59,7 +117,8 @@ def createDatasets(tests, config_object):
                                 from lab2 a 
                                 where (a.ferritin is not null or a.glu is not null 
                                       or a.chol is not null or a.uric is not null)
-                                      and a.id <= 1671132 """):
+                                      and a.id <= 1671132 """
+    ):
 
         # Set all output values as unknown first.
 
@@ -68,17 +127,24 @@ def createDatasets(tests, config_object):
         if len(tests) == 1:
             # Single task settings.
             t = tests[0]
-              
-            if t == 1 and ferritin is not None:                 
+
+            if t == 1 and ferritin is not None:
                 y[0] = 1 if ferritin <= 12 else 0
             elif t == 31 and glu is not None:
-                y[0] = 1 if glu >= 7 else 0    
+                y[0] = 1 if glu >= 7 else 0
             elif t == 30 and chol is not None:
-                y[0] = 1 if chol >= 5.2 else 0   
+                y[0] = 1 if chol >= 5.2 else 0
             elif t == 32 and uric is not None:
-                y[0] =  1 if ((gender == 1 and uric >= 0.48) or (gender == 0 and uric >= 0.38)) else 0    
+                y[0] = (
+                    1
+                    if (
+                        (gender == 1 and uric >= 0.48) or (gender == 0 and uric >= 0.38)
+                    )
+                    else 0
+                )
 
-            if y[0] == MASKED_VALUE: continue
+            if y[0] == MASKED_VALUE:
+                continue
 
         else:
             if ferritin is not None:
@@ -88,8 +154,14 @@ def createDatasets(tests, config_object):
             if chol is not None:
                 y[2] = 1 if chol >= 5.2 else 0
             if uric is not None:
-                y[3] =  1 if ((gender == 1 and uric >= 0.48) or (gender == 0 and uric >= 0.38)) else 0
-        
+                y[3] = (
+                    1
+                    if (
+                        (gender == 1 and uric >= 0.48) or (gender == 0 and uric >= 0.38)
+                    )
+                    else 0
+                )
+
         # Initialize input / output params.
 
         x = [0 for i in range(NN)]
@@ -99,20 +171,23 @@ def createDatasets(tests, config_object):
 
             if analyte is not None:
 
-                if ind not in Limits: return
+                if ind not in Limits:
+                    return
 
                 v = float(analyte)
-                if ind != 34: # Do not log age.
+                if ind != 34:  # Do not log age.
                     v = math.log(v)
 
-                if Limits[ind][0] > v: Limits[ind][0] = v
-                if Limits[ind][1] < v: Limits[ind][1] = v
+                if Limits[ind][0] > v:
+                    Limits[ind][0] = v
+                if Limits[ind][1] < v:
+                    Limits[ind][1] = v
 
                 # Count (for statistical purpose).
                 Limits[ind][2] = Limits[ind][2] + 1
 
                 if ind not in tests:
-                    # Input params: fill X and W arrays.   
+                    # Input params: fill X and W arrays.
 
                     z = idx.index(ind)
                     x[z] = v
@@ -137,7 +212,7 @@ def createDatasets(tests, config_object):
         add_value(mid, 36)
         add_value(gra, 37),
 
-        # Additional parameters if any.        
+        # Additional parameters if any.
         add_value(b12, 2)
         add_value(folic, 3)
         add_value(ast, 4)
@@ -157,12 +232,12 @@ def createDatasets(tests, config_object):
         add_value(chol, 30)
         add_value(uric, 32)
 
-        # Add values to the dataset.  
+        # Add values to the dataset.
         X.append(x)
         W.append(w)
         Y.append(y)
 
-    # End of for select cycle.    
+    # End of for select cycle.
     with open(analyte_limits_file, "wb") as file:
         pickle.dump(Limits, file)
 
@@ -171,7 +246,7 @@ def createDatasets(tests, config_object):
     np.random.shuffle(ids)
 
     # 20% for testing.
-   
+
     train_size = (int)(len(ids) * 0.8)
     test_size = len(ids) - train_size
 
@@ -190,9 +265,10 @@ def createDatasets(tests, config_object):
 
             v = X[ids[i]][j]
             w = W[ids[i]][j]
-            
+
             # No more values here.
-            if w == 0: break 
+            if w == 0:
+                break
 
             y_min, y_max = Limits[w][0], Limits[w][1]
 
@@ -208,9 +284,10 @@ def createDatasets(tests, config_object):
         m_train[i] = W[ids[i]]
 
         for j in range(NN):
-            if m_train[i][j] > 0: m_train[i][j] = 1
+            if m_train[i][j] > 0:
+                m_train[i][j] = 1
 
-    # and for test ... 
+    # and for test ...
     j = 0
     for i in range(train_size, len(ids)):
         for k in range(NN):
@@ -218,7 +295,8 @@ def createDatasets(tests, config_object):
             v = X[ids[i]][k]
             w = W[ids[i]][k]
 
-            if w == 0: break
+            if w == 0:
+                break
 
             y_min, y_max = Limits[w][0], Limits[w][1]
 
@@ -233,7 +311,8 @@ def createDatasets(tests, config_object):
         m_test[j] = W[ids[i]]
 
         for k in range(NN):
-            if m_test[j][k] > 0: m_test[j][k] = 1
+            if m_test[j][k] > 0:
+                m_test[j][k] = 1
 
         j = j + 1
 
@@ -246,7 +325,15 @@ def createDatasets(tests, config_object):
     m_pred_train[:, :] = tests
     m_pred_test[:, :] = tests
 
-    return x_train, w_train, m_train, y_train, m_pred_train, \
-           x_test, w_test, m_test, y_test, m_pred_test; 
-
-
+    return (
+        x_train,
+        w_train,
+        m_train,
+        y_train,
+        m_pred_train,
+        x_test,
+        w_test,
+        m_test,
+        y_test,
+        m_pred_test,
+    )

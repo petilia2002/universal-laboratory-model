@@ -3,6 +3,7 @@ import os
 
 # If you place a stop file in the working directory, the model will stop training.
 
+
 class MessagerCallback(tf.keras.callbacks.Callback):
 
     def __init__(self, **kwargs):

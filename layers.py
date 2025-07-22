@@ -8,6 +8,7 @@ MASKED_VALUE = -1
 # Scale GPT-like embedding by the real value.
 # No bias applied here.
 
+
 class RealValueLayer(tf.keras.Layer):
 
     def __init__(self, embedding_size, **kwargs):
@@ -21,7 +22,7 @@ class RealValueLayer(tf.keras.Layer):
 
         gpt = inputs[0]
         v = inputs[1]
-        
+
         v = tf.reshape(v, shape=(-1, v.shape[1], 1))
         v = tf.repeat(v, repeats=[self.embedding_size], axis=2)
 
@@ -33,6 +34,7 @@ class RealValueLayer(tf.keras.Layer):
 
 
 # Mask for the encoder.
+
 
 class MaskLayerLeft(layers.Layer):
 
@@ -51,7 +53,9 @@ class MaskLayerLeft(layers.Layer):
         mask = K.dot(y, rank)
         return tf.transpose(mask, (0, 2, 1))
 
-# Mask for the decoder. 
+
+# Mask for the decoder.
+
 
 class MaskLayerRight(layers.Layer):
 

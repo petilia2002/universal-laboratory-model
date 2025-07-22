@@ -5,4 +5,5 @@ __pycache__
 *.pickle
 stop
 stats/*.txt
-venv/
+venv311/
+data/

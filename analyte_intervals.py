@@ -1,6 +1,7 @@
 from configparser import ConfigParser
 import fdb
 
+
 def find_min_max(x):
 
     P = 0.9999
@@ -117,4 +118,5 @@ def applicabilityDomain():
 
     ml.commit()
 
-applicabilityDomain();
+
+applicabilityDomain()
