@@ -6,4 +6,4 @@ __pycache__
 stop
 stats/*.txt
 venv311/
-data/
+weights/

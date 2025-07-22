@@ -6,7 +6,7 @@ import numpy as np
 from configparser import ConfigParser
 
 from data import createDatasets
-from models import createUlm, createMultiTask, createSingle
+from models import createUlm, createMultiTask, createSingle, createXGBoosting
 from callbacks import MessagerCallback
 
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, TensorBoard
@@ -39,6 +39,9 @@ elif model_type == "multi":
 elif model_type == "single":
     tests = [32]
     labels = ["Uric acid"]
+elif model_type == "GB":
+    tests = [30]
+    labels = ["Cholesterol"]
 else:
     print("Unknown model type. Check config, please.", model_type)
     sys.exit(1)
@@ -65,6 +68,8 @@ elif model_type == "multi":
     model = createMultiTask(N_train=x_train.shape[1], N_pred=len(tests))
 elif model_type == "single":
     model = createSingle(N_train=x_train.shape[1])
+elif model_type == "GB":
+    model = createXGBoosting()
 if model is None:
     print("No model is built. Check config.")
     sys.exit(1)
@@ -120,6 +125,7 @@ if model_type == "ulm":
 
     y_pred = model.predict([x_train, w_train, m_train, m_pred_train])
     y2_pred = model.predict([x_test, w_test, m_test, m_pred_test])
+    model.save_weights(save_file, True)
 
 elif model_type == "multi" or model_type == "single":
     model.fit(
@@ -140,12 +146,24 @@ elif model_type == "multi" or model_type == "single":
 
     y_pred = model.predict(x_train)
     y2_pred = model.predict(x_test)
+    print(y2_pred)
+    print(y2_pred.shape)
+    model.save_weights(save_file, True)
 
-model.save_weights(save_file, True)
+elif model_type == "GB":
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict_proba(x_train)
+    y2_pred = model.predict_proba(x_test)
+
+    y_pred = y_pred[:, 1]
+    y2_pred = y2_pred[:, 1]
+
+    y_pred = y_pred.reshape(-1, 1)
+    y2_pred = y2_pred.reshape(-1, 1)
+
 
 # Calc stats
-
-
 def calcRocs(prop):
 
     q = []

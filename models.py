@@ -9,6 +9,7 @@ from keras.layers import Flatten, MultiHeadAttention, TimeDistributed
 from keras.optimizers import Adam
 
 from layers import RealValueLayer, MaskLayerLeft, MaskLayerRight, MASKED_VALUE
+from xgboost import XGBClassifier
 
 # Multitask loss, some outputs may be omitted.
 
@@ -124,3 +125,7 @@ def createMultiTask(N_train, N_pred):
     model.summary()
 
     return model
+
+def createXGBoosting():
+    cls = XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=5)
+    return cls
