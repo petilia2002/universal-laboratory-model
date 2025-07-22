@@ -1,4 +1,5 @@
-import numpy as np 
+import numpy as np
+
 
 def calc_confusion_matrix(y_real, y_pred, threshold):
 
@@ -18,5 +19,3 @@ def calc_confusion_matrix(y_real, y_pred, threshold):
             fn = fn + 1
 
     return tp, tn, fp, fn
-
-
