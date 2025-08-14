@@ -5,3 +5,4 @@ __pycache__
 *.pickle
 stop
 stats/*.txt
+experiments/stats

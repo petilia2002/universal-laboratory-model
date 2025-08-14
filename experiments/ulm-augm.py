@@ -45,7 +45,7 @@ con = fdb.connect(dsn=dsn, user=user, password=password);
 
 print("GPU: ", tensorflow.config.list_physical_devices('GPU'))
 
-BATCH_SIZE=256
+BATCH_SIZE=64
 
 # List all classes of analyte.py and create objects.
 # Then create variables for each object as it's viewname
@@ -68,7 +68,7 @@ source = [gender, age, hgb, rbc, mcv, plt,
           chol, glu, ferritin, uric, hba1c, psa]
 
 #tests we want to predict 
-tests = [glu, chol, alt, ast, hba1c];
+tests = [glu, chol, alt, ast, hba1c ];
 
 X = [];
 W = [];
@@ -81,7 +81,7 @@ y_map = {obj.getId() : i for i, obj in enumerate(tests)}
 x_map = {obj.getId() : i for i, obj in enumerate(source)}
 
 for data in con.cursor().execute(f"""select {sel} from lab2 a 
-                                     where ({sql}) and a.id <= 1671132"""):
+                                     where ({sql}) and a.logdate <= '2025/04/01' """):
         
    y = [MASKED_VALUE] * len(tests);       
    x = [ 0 ] * len(source);
@@ -172,7 +172,7 @@ def cbcLoss(y_true, y_pred):
 
    r_mse = tensorflow.reduce_mean(tensorflow.math.square((y_true[1] - y_pred[1]) * mask))
 
-   return r_class + 0.3 * r_mse;  
+   return r_class + 0.1 * r_mse;  
 
 model = Model([l_in, l_words, l_mask, l_pred], [l_out_class, l_out_regression]);
 
@@ -265,8 +265,11 @@ def calcRocs(analyte, key, label, ans):
     
     r1 = np.corrcoef(t_r, t_p) [0,1]
     r2 = np.corrcoef(q_r, q_p) [0,1]
+   
+    squared_differences = (q_p - q_r) ** 2
+    rmse_test = np.sqrt(np.mean(squared_differences))
 
-    return fpr, tpr, thresholds, qe, qr, roc_auc, r1*r1, r2*r2;
+    return fpr, tpr, thresholds, qe, qr, roc_auc, r1*r1, r2*r2, rmse_test;
 
 # calc for all augmentation variants
 # i.g. predictin PSA only 
@@ -289,7 +292,7 @@ def calc_stats(analyte, name):
             nm.append(i.getId());
             ans.append(i.getViewName());
 
-    fpr, tpr, thresholds, qe, qr, roc_auc, r1, r2 = calcRocs(analyte, set(nm), name, ans);
+    fpr, tpr, thresholds, qe, qr, roc_auc, r1, r2, rmse_test = calcRocs(analyte, set(nm), name, ans);
 
     m1 =  10
     m2 = -10
@@ -338,6 +341,7 @@ def calc_stats(analyte, name):
     print("Negative Predictive Value = ", round(npv,2) ) ;
 
     print("R-squared: ", r1, r2)
+    print("RMSE: ", rmse_test)
 
     print("")
 

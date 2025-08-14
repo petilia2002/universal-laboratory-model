@@ -48,6 +48,14 @@ class Analyte:
 
         return 0.9 - 0.8 * (y_max - value) / (y_max - y_min);
 
+    def unscale(self, value) -> float:
+
+        add = 0.01 * (self.max - self.min);
+        y_max = self.max + add;
+        y_min = self.min - add;
+        
+        return math.exp(y_max - (0.9 - value) * (y_max - y_min) / 0.8);
+
     def up(self, value) -> float:
   
         if value is None:
