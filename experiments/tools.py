@@ -1,4 +1,7 @@
+import sys 
+import math
 import numpy as np
+import keras
 
 #enumerate all variants up to N 
 #imitating addition in binary system, but from the left
@@ -37,92 +40,192 @@ def get_variants(n):
     return v;
 
 # Preparation augmented dataset.
+# Generator version.
 
-def prepareData(start, end, ids, X, W, Y, source, tests, x_map, y_map, mask_value):
+class DataGenerator(keras.utils.Sequence):
+    
+    def __init__(self, start, end, ids, X, W, Y, source, tests, x_map, y_map, mask_value, batch_size):
+        super().__init__( )
 
-    #input
-    x_d = [] 
-    w_d = []
-    m_d = []
+        self.ids = ids[start : end]        
 
-    #output
-    y_d = []
-    m_pt = []    
-    r_d = []
+        self.X = X
+        self.W = W
+        self.Y = Y
+        self.source = source
+        self.tests = tests
+        self.x_map = x_map
 
-    for i in range(start, end):  
+        self.y_map = y_map
+        self.mask_value = mask_value
+        self.batch_size = batch_size
 
-       a = [0] * len(source)
-       for j in range(len(source)):
+        self.shuffle = True
+        self.total = 0
+         
+        for i in self.ids:        
+           cnt = 0  
+           for j in range(len(self.tests)):
+              if Y[i][j] != self.mask_value: cnt = cnt + 1;
+           self.total = self.total + int(math.pow(2, cnt)) - 1;
 
-          v = X[ids[i]][j];
-          w = W[ids[i]][j];
+        self.batches = []
+        self.on_epoch_end()
 
-          if w == 0: break;      
-          a[j] = source[ x_map[w] ].scale(v);
+    def noShuffle(self):
+        self.shuffle = False
+        self.on_epoch_end()
 
-       y_t = Y[ids[i]];
-       w_t = W[ids[i]];
+    def __len__(self):    
+        return len(self.batches);
 
-       words = [];
-       for j in range(len(tests)):
-          if y_t[j] != mask_value: words.append(tests[j].getId());           
+    def __getitem__(self, index):
 
-       #augment input
-       for p in get_variants(len(words)):
+        sid = self.batches[index][0];
+        vid = self.batches[index][1];
 
-          b = [0] * len(tests)
-          c = [mask_value] * len(tests)
-          e = [0] * len(tests)
+        #input
+        x_d = [] 
+        w_d = []
+        m_d = []
 
-          ind = 0
-          dels = []
+        #output
+        y_d = []
+        m_pt = []    
+        r_d = []    
+    
+        for i in range(sid, len(self.ids)):
 
-          for j in range(len(p)):
-             if p[j] == 1:
-                b[ind] = words[j]
-                c[ind] = y_t [ y_map[words[j]] ]
+          a = [0] * len(self.source)
+          for j in range(len(self.source)):
 
-                ind_source = w_t.index(words[j])                
-                e[ind] = source[x_map[words[j]]].scale(X[ids[i]][ind_source])
+             v = self.X[self.ids[i]][j];
+             w = self.W[self.ids[i]][j];
 
-                ind = ind + 1  
-                dels.append(words[j])
+             if w == 0: break;      
+             a[j] = self.source[ self.x_map[w] ].scale(v);
 
-          t = [0] * len(source)
-          m = [0] * len(source)
+          y_t = self.Y[self.ids[i]];
+          w_t = self.W[self.ids[i]];
 
-          w = w_t[:]      
+          words = [];
+          for j in range(len(self.tests)):
+             if y_t[j] != self.mask_value: words.append(self.tests[j].getId());           
 
-          for d in dels:
-             w [ w.index(d) ] = 0;
+          #augment input
+          ca = -1;
 
-          ind = 0;
-          for j in range(len(source)):
-             if w[j] != 0:
-                 t [ind] = a [j]
-                 m [ind] = w [j]
-                 ind = ind + 1
+          for p in get_variants(len(words)):
+              ca = ca + 1;
+
+              if vid != -1 and ca < vid - 1 and i == sid : continue;             
+              
+              b = [0] * len(self.tests)
+              c = [self.mask_value] * len(self.tests)
+              e = [0] * len(self.tests)
+
+              ind = 0
+              dels = []
+
+              for j in range(len(p)):
+                  if p[j] == 1:
+                     b[ind] = words[j]
+                     c[ind] = y_t [ self.y_map[words[j]] ]
+
+                     ind_source = w_t.index(words[j])                
+                     e[ind] = self.source[self.x_map[words[j]]].scale(self.X[self.ids[i]][ind_source])
+
+                     ind = ind + 1  
+                     dels.append(words[j])
+
+              t = [0] * len(self.source)
+              m = [0] * len(self.source)
+
+              w = w_t[:]      
+
+              for d in dels:
+                  w [ w.index(d) ] = 0;
+  
+              ind = 0;
+              for j in range(len(self.source)):
+                  if w[j] != 0:
+                      t [ind] = a [j]
+                      m [ind] = w [j]
+                      ind = ind + 1
    
-          m_t = [0] * len(source)
-          for j in range(len(source)):
-             if m[j] > 0: m_t[j] = 1;       
+              m_t = [0] * len(self.source)
+              for j in range(len(self.source)):
+                  if m[j] > 0: m_t[j] = 1;       
 
-          x_d.append(t)
-          w_d.append(m)
-          m_d.append(m_t)
+              x_d.append(t)
+              w_d.append(m)
+              m_d.append(m_t)
 
-          y_d.append(c)
-          m_pt.append(b)
-          r_d.append(e)
+              y_d.append(c)
+              m_pt.append(b)
+              r_d.append(e)
 
-    x_d = np.asarray(x_d, dtype="float32");
-    w_d = np.asarray(w_d, dtype="int8");
-    m_d = np.asarray(m_d, dtype="int8");
+              #full sized batch
+              if len(x_d) >= self.batch_size:
+                
+                  x_d = np.asarray(x_d, dtype="float32");
+                  w_d = np.asarray(w_d, dtype="int8");
+                  m_d = np.asarray(m_d, dtype="int8");
 
-    y_d = np.asarray(y_d, dtype="int8");
-    m_pt = np.asarray(m_pt, dtype="int8");
-    r_d = np.asarray(r_d, dtype="float32");
+                  y_d = np.asarray(y_d, dtype="int8");
+                  m_pt = np.asarray(m_pt, dtype="int8");
+                  r_d = np.asarray(r_d, dtype="float32");
 
-    return x_d, w_d, m_d, y_d, m_pt, r_d
+                  return (x_d, w_d, m_d, m_pt), (y_d, r_d)
+
+        #last small batch
+        x_d = np.asarray(x_d, dtype="float32");
+        w_d = np.asarray(w_d, dtype="int8");
+        m_d = np.asarray(m_d, dtype="int8");
+
+        y_d = np.asarray(y_d, dtype="int8");
+        m_pt = np.asarray(m_pt, dtype="int8");
+        r_d = np.asarray(r_d, dtype="float32");
+
+        return (x_d, w_d, m_d, m_pt), (y_d, r_d)
+ 
+
+    def on_epoch_end(self):
+
+        if self.shuffle: np.random.shuffle(self.ids)      
+
+        self.batches = [];
+
+        batch_cnt = 0
+        batch = 0
+
+        it = [0, -1];
+        self.batches.append(it[:])
+
+        for k, i in enumerate(self.ids):
+
+            cnt = 0;
+            for j in range(len(self.tests)):
+              if self.Y[i][j] != self.mask_value: cnt = cnt + 1;
+              
+            cnt = int(math.pow(2, cnt)) - 1
+            batch_cnt = batch_cnt + cnt;
+
+            if batch_cnt > self.batch_size:
+
+               it[0] = k;
+               it[1] = cnt - (batch_cnt - self.batch_size) + 1; 
+
+               self.batches.append(it[:])
+
+               #left from this batch add to the next
+               batch_cnt = cnt - it[1] + 1 
+               
+            if batch_cnt == self.batch_size:
+               batch_cnt = 0
+               if k < len(self.ids) - 1:
+                   it[0] = k + 1
+                   it[1] = -1
+                   self.batches.append(it[:])
+
 

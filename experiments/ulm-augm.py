@@ -26,7 +26,7 @@ from data import MASKED_VALUE
 from layers import RealValueLayer, MaskLayerLeft, MaskLayerRight, MASKED_VALUE 
 from callbacks import MessagerCallback
 from utils import calc_confusion_matrix
-from tools import get_variants, prepareData
+from tools import get_variants, DataGenerator
 
 import analyte
 import inspect
@@ -45,7 +45,7 @@ con = fdb.connect(dsn=dsn, user=user, password=password);
 
 print("GPU: ", tensorflow.config.list_physical_devices('GPU'))
 
-BATCH_SIZE=64
+BATCH_SIZE=128
 
 # List all classes of analyte.py and create objects.
 # Then create variables for each object as it's viewname
@@ -68,7 +68,7 @@ source = [gender, age, hgb, rbc, mcv, plt,
           chol, glu, ferritin, uric, hba1c, psa]
 
 #tests we want to predict 
-tests = [glu, chol, alt, ast, hba1c ];
+tests = [ chol, alt, ast, hba1c ];
 
 X = [];
 W = [];
@@ -80,16 +80,43 @@ sel = ", ".join([ ("a." + analyte.getViewName()) for analyte in source]);
 y_map = {obj.getId() : i for i, obj in enumerate(tests)}
 x_map = {obj.getId() : i for i, obj in enumerate(source)}
 
-for data in con.cursor().execute(f"""select {sel} from lab2 a 
+mid_id = x_map[mid.getId()];
+gra_id = x_map[gra.getId()];
+
+eo_id = x_map[eo.getId()];
+mono_id = x_map[mono.getId()];
+baso_id = x_map[baso.getId()];
+lymph_id = x_map[lymph.getId()];
+glu_id = x_map[glu.getId()];
+
+for data in con.cursor().execute(f"""select first 1000 {sel}, lab_id from lab2 a 
                                      where ({sql}) and a.logdate <= '2025/04/01' """):
-        
+   data = list(data);
+
+   lab_id = data[-1];
+   data = data[:-1];
+
+   #Lab's 9 glucose values are unreliable.
+   if lab_id == 9: 
+       data[glu_id] = None;   
+
    y = [MASKED_VALUE] * len(tests);       
    x = [ 0 ] * len(source);
    w = [ 0 ] * len(source);
-  
+ 
+   #add mid/gra if needed
+   if data[mid_id] is None and \
+      data[eo_id] is not None and data[baso_id] is not None and data[mono_id] is not None: 
+
+       data[mid_id] = float(data[eo_id]) + float(data[mono_id]) + float(data[baso_id]);
+
+       if data[lymph_id] is not None:
+          data[gra_id] = 100.0 - float(data[lymph_id]) - data[mid_id];
+
    z = -1;
    sex = 0;
-
+   y_cnt = 0;
+ 
    for ind, value in enumerate(data):
 
       analyte_id = source[ind].getId();
@@ -104,11 +131,14 @@ for data in con.cursor().execute(f"""select {sel} from lab2 a
           w[z] = analyte_id;
           
           if analyte_id in y_map: 
-              y[y_map[analyte_id]] = source[ind].positive(value, sex);              
+              y[y_map[analyte_id]] = source[ind].positive(value, sex);
+              y_cnt = y_cnt + 1;
 
-   X.append(x);
-   W.append(w);
-   Y.append(y);      
+   if y_cnt:
+
+      X.append(x);
+      W.append(w);
+      Y.append(y);      
 
 for analyte in source:
    print(analyte.getName(), analyte.getMinimum(), analyte.getMaximum());
@@ -186,13 +216,23 @@ np.random.shuffle(ids);
 train_size = (int)(len(ids) * 0.8)
 test_size = len(ids) - train_size;
 
-x_train, w_train, m_train, y_train, m_pred_train, r_train = prepareData(0, train_size, ids, X, W, Y, source, tests, x_map, y_map, MASKED_VALUE);
-x_test, w_test, m_test, y_test, m_pred_test, r_test = prepareData(train_size, len(X), ids, X, W, Y, source, tests, x_map, y_map, MASKED_VALUE);
+print("Training sizes: ", train_size);
+print("Test sizes: ", test_size);
 
-print("Training sizes: ", len(x_train), len(y_train));
-print("Test sizes: ", len(x_test), len(y_test));
+train_gen = DataGenerator(0, int(math.floor(0.95*train_size)), ids, X, W, Y, \
+                    source, tests, x_map, y_map, \
+                    MASKED_VALUE, BATCH_SIZE);
 
-model.load_weights("ulm-base.weights.h5");
+val_gen= DataGenerator(int(math.floor(0.95*train_size)), train_size, ids, X, W, Y, \
+                        source, tests, x_map, y_map, \
+                        MASKED_VALUE, BATCH_SIZE);
+val_gen.noShuffle();
+
+test_gen= DataGenerator(train_size, len(X), ids, X, W, Y, \
+                        source, tests, x_map, y_map, \
+                        MASKED_VALUE, BATCH_SIZE);
+
+#model.load_weights("ulm-base.weights.h5");
 
 log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tensorflow.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
@@ -206,14 +246,19 @@ reduce = keras.callbacks.ReduceLROnPlateau(
     monitor="val_loss", factor = 0.9, patience = 20, verbose = 0, mode="auto",
     min_delta=0.00001, cooldown=0, min_lr= 1e-7)
 
-model.fit(x = [x_train, w_train, m_train, m_pred_train], y= [y_train, r_train], 
-          shuffle = True, batch_size=BATCH_SIZE, epochs=100, validation_split=0.2, 
+
+print("Validation batches: ", len(val_gen));
+
+model.fit(x = train_gen, epochs=100, shuffle=True, validation_data = val_gen, 
           callbacks = [tensorboard_callback, early_stopping, reduce, tensorflow.keras.callbacks.TerminateOnNaN(), MessagerCallback()]) 
 
 model.save_weights("ulm-base.weights.h5", True);
 
-y_pred = model.predict([x_train, w_train, m_train, m_pred_train], batch_size=BATCH_SIZE)
-y2_pred = model.predict([x_test, w_test, m_test, m_pred_test], batch_size=BATCH_SIZE)
+train_gen.noShuffle();
+test_gen.noShuffle();
+
+y_pred = model.predict(train_gen)
+y2_pred = model.predict(test_gen)
 
 def calcRocs(analyte, key, label, ans):
     
@@ -226,34 +271,55 @@ def calcRocs(analyte, key, label, ans):
     qr = [];
     q_r = [];
     q_p = [];
-    
-    for i in range(len(y_train)):
 
-        if analyte not in m_pred_train[i]: continue;
-        prop = np.where(m_pred_train[i] == analyte)[0][0]
+    for j in range(len(train_gen)):
+         
+        a, b = train_gen[j]; 
+
+        m_pred_train = a[3];
+        w_train = a[1];
+
+        y_train = b[0];
+        r_train = b[1];
+
+        for k in range(len(m_pred_train)):    
+
+           if analyte not in m_pred_train[k]: continue;
+           prop = np.where(m_pred_train[k] == analyte)[0][0]
        
-        if len(set(w_train[i]).intersection(key)) > 0: continue;
+           if len(set(w_train[k]).intersection(key)) > 0: continue;
 
-        if y_train[i, prop] != MASKED_VALUE:
-            q.append( y_train[i, prop] );
-            v.append( y_pred[0][i, prop, 0] );
+           if y_train[k, prop] != MASKED_VALUE:
+              q.append( y_train[k, prop] );
+              v.append( y_pred[0][j*BATCH_SIZE + k, prop, 0] );
 
-            t_r.append(r_train[i, prop]);
-            t_p.append(y_pred[1][i, prop, 0]);
+              t_r.append(r_train[k, prop]);
+              t_p.append(y_pred[1][j*BATCH_SIZE + k, prop, 0]);
 
-    for i in range(len(y_test)):
 
-        if analyte not in m_pred_test[i]: continue;
-        prop = np.where(m_pred_test[i] == analyte)[0][0]
+    for j in range(len(test_gen)):
+    
+        a, b = test_gen[j]; 
+
+        m_pred_test = a[3];
+        w_test = a[1];
+
+        y_test = b[0];
+        r_test = b[1];
+
+        for k in range(len(m_pred_test)):           
+
+           if analyte not in m_pred_test[k]: continue;
+           prop = np.where(m_pred_test[k] == analyte)[0][0]
  
-        if len(set(w_test[i]).intersection(key)) > 0: continue;
+           if len(set(w_test[k]).intersection(key)) > 0: continue;
 
-        if y_test[i, prop] != MASKED_VALUE:
-            qe.append( y_test[i, prop] );
-            qr.append( y2_pred[0][i, prop, 0] );
+           if y_test[k, prop] != MASKED_VALUE:
+               qe.append( y_test[k, prop] );
+               qr.append( y2_pred[0][j*BATCH_SIZE + k, prop, 0] );
 
-            q_r.append(r_test[i, prop])
-            q_p.append( y2_pred[1][i, prop, 0]);
+               q_r.append(r_test[k, prop])
+               q_p.append( y2_pred[1][j*BATCH_SIZE + k, prop, 0]);
     
     fpr, tpr, thresholds = roc_curve(q, v)
     roc_auc = auc(fpr, tpr)
@@ -265,7 +331,10 @@ def calcRocs(analyte, key, label, ans):
     
     r1 = np.corrcoef(t_r, t_p) [0,1]
     r2 = np.corrcoef(q_r, q_p) [0,1]
-   
+
+    q_p = np.asarray(q_p);
+    q_r = np.asarray(q_r);
+
     squared_differences = (q_p - q_r) ** 2
     rmse_test = np.sqrt(np.mean(squared_differences))
 
